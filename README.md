@@ -43,6 +43,6 @@ The library is tested on Python 3.7, 3.8 and 3.9.
 
 ## References
 
-The library uses some of the code, tools, and utilitites from [acme].
+The library uses some of the code, tools, and utilities from [acme].
 
 [acme]: https://github.com/deepmind/acme

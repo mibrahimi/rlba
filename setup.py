@@ -34,17 +34,15 @@ core_requirements = [
     'dm-env',
     'dm-tree',
     'numpy',
+    'scipy',
     'pillow',
 ]
 
 jax_requirements = [
     'chex',
     'jax',
-    'jaxlib',
     'dm-haiku',
-    'flax',
     'optax',
-    'rlax',
 ]
 
 testing_requirements = [

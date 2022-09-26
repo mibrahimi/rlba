@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""A random Environment.
+"""A Bernoulli bandit Environment.
 """
 
 
@@ -37,6 +37,7 @@ class BernoulliBanditEnv:
         shape=(), dtype=np.float32, minimum=0.0, maximum=1.0,
         name='observation spec')
     self._rng = default_rng(seed)
+    
   def step(self, action: Array) -> Array:
     """Updates the environment according to the action and returns an `observation`.
 
