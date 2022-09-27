@@ -67,6 +67,8 @@ class EnvironmentLoop:
     def run(
         self,
         n_step: int = 1000,
+        report_action: bool = True,
+        report_obs: bool = False,
     ) -> loggers.LoggingData:
         """Run the environment loop.
 
@@ -114,9 +116,14 @@ class EnvironmentLoop:
             steps_per_second = n_step / (time.time() - start_time)
             result = {
                 "cumulative_return": cumulative_return,
-                "steps_per_second": steps_per_second,
+                "steps_per_second": round(steps_per_second, 3),
             }
+            if report_action:
+                result.update({"action": action})
+            if report_obs:
+                result.update({"obs": obs})
             result.update(counts)
+
             for observer in self._observers:
                 result.update(observer.get_metrics())
 
