@@ -28,53 +28,52 @@ EPISODE_LENGTH = 10
 # Action specs
 I32_NVAL_1 = types.DiscreteArraySpec(num_values=1, dtype=np.int32)
 I32_NVAL_5 = types.DiscreteArraySpec(num_values=5, dtype=np.int32)
-TREE_DAS = {'a': I32_NVAL_1, 'b': I32_NVAL_5}
+TREE_DAS = {"a": I32_NVAL_1, "b": I32_NVAL_5}
 
 # Observation specs
 F32 = types.ArraySpec(dtype=np.float32, shape=())
 F32_1x3 = types.ArraySpec(dtype=np.float32, shape=(1, 3))
-TREE_AS = {'a': F32, 'b': F32_1x3}
+TREE_AS = {"a": F32, "b": F32_1x3}
 
 TEST_CASES = (
-    ('single_action_scalar_reward', I32_NVAL_1, F32),
-    ('multiple_action_scalar_reward', I32_NVAL_5, F32),
-    ('tree_action_scalar_reward', TREE_DAS, F32),
-    ('single_action_matrix_reward', I32_NVAL_1, F32_1x3),
-    ('multiple_action_matrix_reward', I32_NVAL_5, F32_1x3),
-    ('tree_action_matrix_reward', TREE_DAS, F32_1x3),
-    ('single_action_tree_reward', I32_NVAL_1, TREE_AS),
-    ('multiple_action_tree_reward', I32_NVAL_5, TREE_AS),
-    ('tree_action_tree_reward', TREE_DAS, TREE_AS),
-    )
+    ("single_action_scalar_reward", I32_NVAL_1, F32),
+    ("multiple_action_scalar_reward", I32_NVAL_5, F32),
+    ("tree_action_scalar_reward", TREE_DAS, F32),
+    ("single_action_matrix_reward", I32_NVAL_1, F32_1x3),
+    ("multiple_action_matrix_reward", I32_NVAL_5, F32_1x3),
+    ("tree_action_matrix_reward", TREE_DAS, F32_1x3),
+    ("single_action_tree_reward", I32_NVAL_1, TREE_AS),
+    ("multiple_action_tree_reward", I32_NVAL_5, TREE_AS),
+    ("tree_action_tree_reward", TREE_DAS, TREE_AS),
+)
 
 
 class EnvironmentLoopTest(parameterized.TestCase):
-  
-  @parameterized.named_parameters(*TEST_CASES)
-  def test_run_steps(self, action_spec, observation_spec):
-    env, agent, loop = _parameterized_setup(action_spec, observation_spec)
+    @parameterized.named_parameters(*TEST_CASES)
+    def test_run_steps(self, action_spec, observation_spec):
+        env, agent, loop = _parameterized_setup(action_spec, observation_spec)
 
-    # Run the loop. This will run a total number of steps of EPISODE_LENGTH.
-    loop.run(n_step=EPISODE_LENGTH)
-    self.assertEqual(agent.num_updates, EPISODE_LENGTH)
+        # Run the loop. This will run a total number of steps of EPISODE_LENGTH.
+        loop.run(n_step=EPISODE_LENGTH)
+        self.assertEqual(agent.num_updates, EPISODE_LENGTH)
 
 
 def _parameterized_setup(
-    action_spec: types.NestedArraySpec,
-    observation_spec: types.NestedArraySpec):
-  """Common setup code that, unlike self.setUp, takes arguments.
+    action_spec: types.NestedArraySpec, observation_spec: types.NestedArraySpec
+):
+    """Common setup code that, unlike self.setUp, takes arguments.
 
-  Args:
-    action_spec: a (nested) types.ArraySpec.
-    observation_spec: a (nested) types.ArraySpec.
-  Returns:
-    environment, agent, loop
-  """
-  env = fakes.FakeEnvironment(action_spec, observation_spec, 0)
-  agent = fakes.RandomAgent(action_spec, observation_spec, 0)
-  loop = environment_loop.EnvironmentLoop(env, agent)
-  return env, agent, loop
+    Args:
+      action_spec: a (nested) types.ArraySpec.
+      observation_spec: a (nested) types.ArraySpec.
+    Returns:
+      environment, agent, loop
+    """
+    env = fakes.FakeEnvironment(action_spec, observation_spec, 0)
+    agent = fakes.RandomAgent(action_spec, observation_spec, 0)
+    loop = environment_loop.EnvironmentLoop(env, agent)
+    return env, agent, loop
 
 
-if __name__ == '__main__':
-  absltest.main()
+if __name__ == "__main__":
+    absltest.main()

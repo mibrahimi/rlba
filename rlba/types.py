@@ -27,14 +27,14 @@ DiscreteArraySpec = specs.DiscreteArray
 # pytype: disable=not-supported-yet
 NestedArraySpec = Union[
     specs.Array,
-    Iterable['NestedArraySpec'],
-    Mapping[Any, 'NestedArraySpec'],
+    Iterable["NestedArraySpec"],
+    Mapping[Any, "NestedArraySpec"],
 ]
 
 NestedDiscreteArraySpec = Union[
     specs.DiscreteArray,
-    Iterable['NestedDiscreteArraySpec'],
-    Mapping[Any, 'NestedDiscreteArraySpec'],
+    Iterable["NestedDiscreteArraySpec"],
+    Mapping[Any, "NestedDiscreteArraySpec"],
 ]
 # pytype: enable=not-supported-yet
 
@@ -42,16 +42,18 @@ NestedDiscreteArraySpec = Union[
 ActionSpec = NestedDiscreteArraySpec
 ObservationSpec = NestedArraySpec
 
+
 @dataclass
 class EnvironmentSpec:
-  action_spec: ActionSpec
-  observation_spec: ObservationSpec
+    action_spec: ActionSpec
+    observation_spec: ObservationSpec
+
 
 Array = ArrayLike
 # pytype: disable=not-supported-yet
 NestedArray = Union[
     ArrayLike,
-    Iterable['NestedArray'],
-    Mapping[Any, 'NestedArray'],
+    Iterable["NestedArray"],
+    Mapping[Any, "NestedArray"],
 ]
 # pytype: enable=not-supported-yet

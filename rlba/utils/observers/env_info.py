@@ -23,26 +23,27 @@ import numpy as np
 
 
 class EnvInfoObserver:
-  """An observer that collects and accumulates scalars from env's info."""
+    """An observer that collects and accumulates scalars from env's info."""
 
-  def __init__(self):
-    self._metrics = {}
+    def __init__(self):
+        self._metrics = {}
 
-  def _accumulate_metrics(self, env: Environment) -> None:
-    if not hasattr(env, 'get_info'):
-      return
-    info = getattr(env, 'get_info')()
-    if not info:
-      return
-    for k, v in info.items():
-      if np.isscalar(v):
-        self._metrics[k] = self._metrics.get(k, 0) + v
+    def _accumulate_metrics(self, env: Environment) -> None:
+        if not hasattr(env, "get_info"):
+            return
+        info = getattr(env, "get_info")()
+        if not info:
+            return
+        for k, v in info.items():
+            if np.isscalar(v):
+                self._metrics[k] = self._metrics.get(k, 0) + v
 
-  def observe(self, env: Environment, action: NestedArray,
-              observation: NestedArray) -> None:
-    """Records one environment step."""
-    self._accumulate_metrics(env)
+    def observe(
+        self, env: Environment, action: NestedArray, observation: NestedArray
+    ) -> None:
+        """Records one environment step."""
+        self._accumulate_metrics(env)
 
-  def get_metrics(self) -> Dict[str, base.Number]:
-    """Returns metrics collected for the current episode."""
-    return self._metrics
+    def get_metrics(self) -> Dict[str, base.Number]:
+        """Returns metrics collected for the current episode."""
+        return self._metrics

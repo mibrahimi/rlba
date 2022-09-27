@@ -25,59 +25,61 @@ from numpy.random import default_rng
 @metrics.record_class_usage
 @dataclass
 class RandomAgent:
-  """A random agent that select actions randomly  """
-  def __init__(
-    self,
-    action_spec: types.ActionSpec,
-    observation_spec: types.ObservationSpec,
-    seed: int,
-  ):
-    self._action_spec = action_spec
-    self._observation_spec = observation_spec
-    self._rng = default_rng(seed)
+    """A random agent that select actions randomly"""
 
-  def select_action(self) -> types.NestedArray:
-    """Samples from the policy and returns an action."""
-    return self._rng.choice(self._action_spec.num_values)
+    def __init__(
+        self,
+        action_spec: types.ActionSpec,
+        observation_spec: types.ObservationSpec,
+        seed: int,
+    ):
+        self._action_spec = action_spec
+        self._observation_spec = observation_spec
+        self._rng = default_rng(seed)
 
-  def reward_spec(self) -> types.Array:
-    """Describes the reward returned by the environment.
+    def select_action(self) -> types.NestedArray:
+        """Samples from the policy and returns an action."""
+        return self._rng.choice(self._action_spec.num_values)
 
-    By default this is assumed to be a single float.
+    def reward_spec(self) -> types.Array:
+        """Describes the reward returned by the environment.
 
-    Returns:
-      An `Array` spec.
-    """
-    return types.Array(shape=(), dtype=float, name='reward')
+        By default this is assumed to be a single float.
 
-  def discount_spec(self) -> types.BoundedArraySpec:
-    """Describes the discount considered by the agent for planning.
+        Returns:
+          An `Array` spec.
+        """
+        return types.Array(shape=(), dtype=float, name="reward")
 
-    By default this is assumed to be a single float between 0 and 1.
+    def discount_spec(self) -> types.BoundedArraySpec:
+        """Describes the discount considered by the agent for planning.
 
-    Returns:
-      An `Array` spec.
-    """
-    return types.BoundedArraySpec(
-        shape=(), dtype=float, minimum=0., maximum=1., name='discount')
+        By default this is assumed to be a single float between 0 and 1.
 
-  def observe(
-      self,
-      action: types.NestedArray,
-      obs: types.NestedArray,
-  ):
-    """Make an observation from the environment.
+        Returns:
+          An `Array` spec.
+        """
+        return types.BoundedArraySpec(
+            shape=(), dtype=float, minimum=0.0, maximum=1.0, name="discount"
+        )
 
-    Args:
-      action: action taken in the environment.
-      obs: observation produced by the environment given the action.
-    """
-    return 0
+    def observe(
+        self,
+        action: types.NestedArray,
+        obs: types.NestedArray,
+    ):
+        """Make an observation from the environment.
 
-  def update(self, wait: bool = False):
-    """Perform an update of the actor parameters from past observations.
+        Args:
+          action: action taken in the environment.
+          obs: observation produced by the environment given the action.
+        """
+        return 0
 
-    Args:
-      wait: if True, the update will be blocking.
-    """
-    pass
+    def update(self, wait: bool = False):
+        """Perform an update of the actor parameters from past observations.
+
+        Args:
+          wait: if True, the update will be blocking.
+        """
+        pass

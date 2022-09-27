@@ -24,90 +24,96 @@ from rlba.types import Array, ArraySpec, BoundedArraySpec, DiscreteArraySpec
 
 
 class BernoulliBanditEnv:
-  """A Bernoulli bandit environment.
-  """
-  def __init__(
-    self,
-    pvals: Iterator[float],
-    seed: int,
-  ):
-    self._pvals = pvals
-    self._action_spec: DiscreteArraySpec = DiscreteArraySpec(len(pvals), name='action spec')
-    self._observation_spec: ArraySpec = BoundedArraySpec(
-        shape=(), dtype=np.float32, minimum=0.0, maximum=1.0,
-        name='observation spec')
-    self._rng = default_rng(seed)
-    
-  def step(self, action: Array) -> Array:
-    """Updates the environment according to the action and returns an `observation`.
+    """A Bernoulli bandit environment."""
 
-    Args:
-      action: A DiscreteArray corresponding to `action_spec()`.
+    def __init__(
+        self,
+        pvals: Iterator[float],
+        seed: int,
+    ):
+        self._pvals = pvals
+        self._action_spec: DiscreteArraySpec = DiscreteArraySpec(
+            len(pvals), name="action spec"
+        )
+        self._observation_spec: ArraySpec = BoundedArraySpec(
+            shape=(),
+            dtype=np.float32,
+            minimum=0.0,
+            maximum=1.0,
+            name="observation spec",
+        )
+        self._rng = default_rng(seed)
 
-    Returns:
-      An `Observation` A NumPy array, or a nested dict, list or tuple of arrays.
-          Scalar values that can be cast to NumPy arrays (e.g. Python floats)
-          are also valid in place of a scalar array. Must conform to the
-          specification returned by `observation_spec()`.
-    """
-    try:
-        action = int(action)
-    except TypeError:
-        TypeError('Action does not seem to be convertable to an int')
-    if action >= self._action_spec.num_values:
-        raise ValueError('action is larger than number of available arms.')
+    def step(self, action: Array) -> Array:
+        """Updates the environment according to the action and returns an `observation`.
 
-    return self._rng.binomial(1, self._pvals[action])
+        Args:
+          action: A DiscreteArray corresponding to `action_spec()`.
 
-  def observation_spec(self):
-    """Defines the observations provided by the environment.
+        Returns:
+          An `Observation` A NumPy array, or a nested dict, list or tuple of arrays.
+              Scalar values that can be cast to NumPy arrays (e.g. Python floats)
+              are also valid in place of a scalar array. Must conform to the
+              specification returned by `observation_spec()`.
+        """
+        try:
+            action = int(action)
+        except TypeError:
+            TypeError("Action does not seem to be convertable to an int")
+        if action >= self._action_spec.num_values:
+            raise ValueError("action is larger than number of available arms.")
 
-    May use a subclass of `specs.Array` that specifies additional properties
-    such as min and max bounds on the values.
+        return self._rng.binomial(1, self._pvals[action])
 
-    Returns:
-      An `Array` spec, or a nested dict, list or tuple of `Array` specs.
-    """
-    return self._observation_spec
+    def observation_spec(self):
+        """Defines the observations provided by the environment.
 
-  def action_spec(self):
-    """Defines the actions that should be provided to `step`.
+        May use a subclass of `specs.Array` that specifies additional properties
+        such as min and max bounds on the values.
 
-    May use a subclass of `specs.Array` that specifies additional properties
-    such as min and max bounds on the values.
+        Returns:
+          An `Array` spec, or a nested dict, list or tuple of `Array` specs.
+        """
+        return self._observation_spec
 
-    Returns:
-      A `DiscereteArray` spec, or a nested dict, list or tuple of `Array` specs.
-    """
-    return self._action_spec
+    def action_spec(self):
+        """Defines the actions that should be provided to `step`.
 
-  def close(self):
-    """Frees any resources used by the environment.
+        May use a subclass of `specs.Array` that specifies additional properties
+        such as min and max bounds on the values.
 
-    Implement this method for an environment backed by an external process.
+        Returns:
+          A `DiscereteArray` spec, or a nested dict, list or tuple of `Array` specs.
+        """
+        return self._action_spec
 
-    This method can be used directly
+    def close(self):
+        """Frees any resources used by the environment.
 
-    ```python
-    env = Env(...)
-    # Use env.
-    env.close()
-    ```
+        Implement this method for an environment backed by an external process.
 
-    or via a context manager
+        This method can be used directly
 
-    ```python
-    with Env(...) as env:
-      # Use env.
-    ```
-    """
-    pass
+        ```python
+        env = Env(...)
+        # Use env.
+        env.close()
+        ```
 
-  def __enter__(self):
-    """Allows the environment to be used in a with-statement context."""
-    return self
+        or via a context manager
 
-  def __exit__(self, exc_type, exc_value, traceback):
-    """Allows the environment to be used in a with-statement context."""
-    del exc_type, exc_value, traceback  # Unused.
-    self.close()
+        ```python
+        with Env(...) as env:
+          # Use env.
+        ```
+        """
+        pass
+
+    def __enter__(self):
+        """Allows the environment to be used in a with-statement context."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Allows the environment to be used in a with-statement context."""
+        del exc_type, exc_value, traceback  # Unused.
+        self.close()

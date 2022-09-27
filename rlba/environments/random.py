@@ -21,84 +21,86 @@ from rlba import types
 
 
 class RandomEnvironment:
-  """A random RL environment.
-  """
-  def __init__(
-    self,
-    action_spec: types.ActionSpec,
-    observation_spec: types.ObservationSpec,
-    seed: int,
-  ):
-    self._action_spec: types.DiscreteArraySpec = action_spec
-    self._observation_spec: types.ArraySpec = observation_spec
-    self._rng = default_rng(seed)
-  def step(self, action: types.Array) -> types.Array:
-    """Updates the environment according to the action and returns an `observation`.
+    """A random RL environment."""
 
-    This method will also start a new sequence if called after the environment
-    has been constructed and `reset` has not been called.
+    def __init__(
+        self,
+        action_spec: types.ActionSpec,
+        observation_spec: types.ObservationSpec,
+        seed: int,
+    ):
+        self._action_spec: types.DiscreteArraySpec = action_spec
+        self._observation_spec: types.ArraySpec = observation_spec
+        self._rng = default_rng(seed)
 
-    Args:
-      action: A DiscreteArray corresponding to `action_spec()`.
+    def step(self, action: types.Array) -> types.Array:
+        """Updates the environment according to the action and returns an `observation`.
 
-    Returns:
-      An `Observation` A NumPy array, or a nested dict, list or tuple of arrays.
-          Scalar values that can be cast to NumPy arrays (e.g. Python floats)
-          are also valid in place of a scalar array. Must conform to the
-          specification returned by `observation_spec()`.
-    """
-    return self._rng.standard_normal(self._observation_spec.shape,
-                                     self._observation_spec.dtype)
+        This method will also start a new sequence if called after the environment
+        has been constructed and `reset` has not been called.
 
-  def observation_spec(self):
-    """Defines the observations provided by the environment.
+        Args:
+          action: A DiscreteArray corresponding to `action_spec()`.
 
-    May use a subclass of `specs.Array` that specifies additional properties
-    such as min and max bounds on the values.
+        Returns:
+          An `Observation` A NumPy array, or a nested dict, list or tuple of arrays.
+              Scalar values that can be cast to NumPy arrays (e.g. Python floats)
+              are also valid in place of a scalar array. Must conform to the
+              specification returned by `observation_spec()`.
+        """
+        return self._rng.standard_normal(
+            self._observation_spec.shape, self._observation_spec.dtype
+        )
 
-    Returns:
-      An `Array` spec, or a nested dict, list or tuple of `Array` specs.
-    """
-    return self._observation_spec
+    def observation_spec(self):
+        """Defines the observations provided by the environment.
 
-  def action_spec(self):
-    """Defines the actions that should be provided to `step`.
+        May use a subclass of `specs.Array` that specifies additional properties
+        such as min and max bounds on the values.
 
-    May use a subclass of `specs.Array` that specifies additional properties
-    such as min and max bounds on the values.
+        Returns:
+          An `Array` spec, or a nested dict, list or tuple of `Array` specs.
+        """
+        return self._observation_spec
 
-    Returns:
-      A `DiscereteArray` spec, or a nested dict, list or tuple of `Array` specs.
-    """
-    return self._action_spec
+    def action_spec(self):
+        """Defines the actions that should be provided to `step`.
 
-  def close(self):
-    """Frees any resources used by the environment.
+        May use a subclass of `specs.Array` that specifies additional properties
+        such as min and max bounds on the values.
 
-    Implement this method for an environment backed by an external process.
+        Returns:
+          A `DiscereteArray` spec, or a nested dict, list or tuple of `Array` specs.
+        """
+        return self._action_spec
 
-    This method can be used directly
+    def close(self):
+        """Frees any resources used by the environment.
 
-    ```python
-    env = Env(...)
-    # Use env.
-    env.close()
-    ```
+        Implement this method for an environment backed by an external process.
 
-    or via a context manager
+        This method can be used directly
 
-    ```python
-    with Env(...) as env:
-      # Use env.
-    ```
-    """
-    pass
+        ```python
+        env = Env(...)
+        # Use env.
+        env.close()
+        ```
 
-  def __enter__(self):
-    """Allows the environment to be used in a with-statement context."""
-    return self
+        or via a context manager
 
-  def __exit__(self, exc_type, exc_value, traceback):
-    """Allows the environment to be used in a with-statement context."""
-    del exc_type, exc_value, traceback  # Unused.
-    self.close()
+        ```python
+        with Env(...) as env:
+          # Use env.
+        ```
+        """
+        pass
+
+    def __enter__(self):
+        """Allows the environment to be used in a with-statement context."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Allows the environment to be used in a with-statement context."""
+        del exc_type, exc_value, traceback  # Unused.
+        self.close()

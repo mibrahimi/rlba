@@ -36,17 +36,17 @@ from rlba.utils.loggers import base
 
 
 class InMemoryLogger:
-  """A simple logger that keeps all data in memory."""
+    """A simple logger that keeps all data in memory."""
 
-  def __init__(self):
-    self._data = []
+    def __init__(self):
+        self._data = []
 
-  def write(self, data: base.LoggingData):
-    self._data.append(data)
+    def write(self, data: base.LoggingData):
+        self._data.append(data)
 
-  def close(self):
-    pass
+    def close(self):
+        pass
 
-  @property
-  def data(self) -> Sequence[base.LoggingData]:
-    return self._data
+    @property
+    def data(self) -> Sequence[base.LoggingData]:
+        return self._data

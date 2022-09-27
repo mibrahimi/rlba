@@ -32,7 +32,9 @@ from rlba.utils.loggers.filters import GatedFilter
 from rlba.utils.loggers.filters import KeyFilter
 from rlba.utils.loggers.filters import NoneFilter
 from rlba.utils.loggers.filters import TimeFilter
-from rlba.utils.loggers.default import make_default_logger  # pylint: disable=g-bad-import-order
+from rlba.utils.loggers.default import (
+    make_default_logger,
+)  # pylint: disable=g-bad-import-order
 from rlba.utils.loggers.terminal import TerminalLogger
 
 # Internal imports.

@@ -19,10 +19,10 @@ from typing import Optional
 from rlba.utils import loggers
 
 
-def make_experiment_logger(label: str,
-                           steps_key: Optional[str] = None,
-                           task_instance: int = 0) -> loggers.Logger:
-  del task_instance
-  if steps_key is None:
-    steps_key = f'{label}_steps'
-  return loggers.make_default_logger(label=label, steps_key=steps_key)
+def make_experiment_logger(
+    label: str, steps_key: Optional[str] = None, task_instance: int = 0
+) -> loggers.Logger:
+    del task_instance
+    if steps_key is None:
+        steps_key = f"{label}_steps"
+    return loggers.make_default_logger(label=label, steps_key=steps_key)

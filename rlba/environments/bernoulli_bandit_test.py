@@ -24,21 +24,21 @@ from rlba.types import ArraySpec, DiscreteArraySpec
 
 
 class BernoulliBanditEnvTest(absltest.TestCase):
-  
-  env = BernoulliBanditEnv([0, 1, 0.5], seed=0)
 
-  def test_all_zero_arm(self):
-    obs = np.array([self.env.step(0) for _ in range(100)])
-    self.assertTrue(np.all(obs == 0))
+    env = BernoulliBanditEnv([0, 1, 0.5], seed=0)
 
-  def test_all_one_arm(self):
-    obs = np.array([self.env.step(1) for _ in range(100)])
-    self.assertTrue(np.all(obs == 1))
+    def test_all_zero_arm(self):
+        obs = np.array([self.env.step(0) for _ in range(100)])
+        self.assertTrue(np.all(obs == 0))
 
-  def test_unbiased_arm(self):
-    obs = np.array([self.env.step(2) for _ in range(1000)])
-    self.assertLess(np.abs(np.sum(obs)/len(obs) - 0.5), 0.05)
+    def test_all_one_arm(self):
+        obs = np.array([self.env.step(1) for _ in range(100)])
+        self.assertTrue(np.all(obs == 1))
+
+    def test_unbiased_arm(self):
+        obs = np.array([self.env.step(2) for _ in range(1000)])
+        self.assertLess(np.abs(np.sum(obs) / len(obs) - 0.5), 0.05)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     absltest.main()

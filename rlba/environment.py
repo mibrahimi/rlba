@@ -28,89 +28,91 @@ from rlba.types import NestedArray, NestedArraySpec, NestedDiscreteArraySpec
 
 
 class Environment(Protocol):
-  """Interface for RL environments.
+    """Interface for RL environments.
 
-  Observations and valid actions are described with `Array` specs, defined in
-  the `dm_env` repository.
-  """
-
-  def step(self, action: NestedArray) -> NestedArray:
-    """Updates the environment according to the action and returns an `observation`.
-
-    This method will also start a new sequence if called after the environment
-    has been constructed and `reset` has not been called.
-
-    Args:
-      action: A DiscreteArray corresponding to `action_spec()`.
-
-    Returns:
-      An `Observation` A NumPy array, or a nested dict, list or tuple of arrays.
-          Scalar values that can be cast to NumPy arrays (e.g. Python floats)
-          are also valid in place of a scalar array. Must conform to the
-          specification returned by `observation_spec()`.
+    Observations and valid actions are described with `Array` specs, defined in
+    the `dm_env` repository.
     """
 
-  def observation_spec(self):
-    """Defines the observations provided by the environment.
+    def step(self, action: NestedArray) -> NestedArray:
+        """Updates the environment according to the action and returns an `observation`.
 
-    May use a subclass of `specs.Array` that specifies additional properties
-    such as min and max bounds on the values.
+        This method will also start a new sequence if called after the environment
+        has been constructed and `reset` has not been called.
 
-    Returns:
-      An `Array` spec, or a nested dict, list or tuple of `Array` specs.
-    """
+        Args:
+          action: A DiscreteArray corresponding to `action_spec()`.
 
-  def action_spec(self):
-    """Defines the actions that should be provided to `step`.
+        Returns:
+          An `Observation` A NumPy array, or a nested dict, list or tuple of arrays.
+              Scalar values that can be cast to NumPy arrays (e.g. Python floats)
+              are also valid in place of a scalar array. Must conform to the
+              specification returned by `observation_spec()`.
+        """
 
-    May use a subclass of `specs.Array` that specifies additional properties
-    such as min and max bounds on the values.
+    def observation_spec(self):
+        """Defines the observations provided by the environment.
 
-    Returns:
-      A `DiscereteArray` spec, or a nested dict, list or tuple of `Array` specs.
-    """
+        May use a subclass of `specs.Array` that specifies additional properties
+        such as min and max bounds on the values.
 
-  def close(self):
-    """Frees any resources used by the environment.
+        Returns:
+          An `Array` spec, or a nested dict, list or tuple of `Array` specs.
+        """
 
-    Implement this method for an environment backed by an external process.
+    def action_spec(self):
+        """Defines the actions that should be provided to `step`.
 
-    This method can be used directly
+        May use a subclass of `specs.Array` that specifies additional properties
+        such as min and max bounds on the values.
 
-    ```python
-    env = Env(...)
-    # Use env.
-    env.close()
-    ```
+        Returns:
+          A `DiscereteArray` spec, or a nested dict, list or tuple of `Array` specs.
+        """
 
-    or via a context manager
+    def close(self):
+        """Frees any resources used by the environment.
 
-    ```python
-    with Env(...) as env:
-      # Use env.
-    ```
-    """
-    pass
+        Implement this method for an environment backed by an external process.
 
-  def __enter__(self):
-    """Allows the environment to be used in a with-statement context."""
-    return self
+        This method can be used directly
 
-  def __exit__(self, exc_type, exc_value, traceback):
-    """Allows the environment to be used in a with-statement context."""
-    del exc_type, exc_value, traceback  # Unused.
-    self.close()
+        ```python
+        env = Env(...)
+        # Use env.
+        env.close()
+        ```
+
+        or via a context manager
+
+        ```python
+        with Env(...) as env:
+          # Use env.
+        ```
+        """
+        pass
+
+    def __enter__(self):
+        """Allows the environment to be used in a with-statement context."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Allows the environment to be used in a with-statement context."""
+        del exc_type, exc_value, traceback  # Unused.
+        self.close()
 
 
 @dataclass
 class EnvironmentSpec:
-  """Full specification of the domains used by a given environment."""
-  observation_spec: NestedArraySpec
-  action_spec: NestedDiscreteArraySpec
+    """Full specification of the domains used by a given environment."""
+
+    observation_spec: NestedArraySpec
+    action_spec: NestedDiscreteArraySpec
 
 
 def make_environment_spec(environment: Environment) -> EnvironmentSpec:
-  """Returns an `EnvironmentSpec` describing values used by an environment."""
-  return EnvironmentSpec(
-      observation_spec=environment.observation_spec(),
-      action_spec=environment.action_spec())
+    """Returns an `EnvironmentSpec` describing values used by an environment."""
+    return EnvironmentSpec(
+        observation_spec=environment.observation_spec(),
+        action_spec=environment.action_spec(),
+    )

@@ -26,11 +26,16 @@ Number = Union[int, float]
 
 
 class EnvLoopObserver(Protocol):
-  """An interface for collecting metrics/counters in EnvironmentLoop."""
+    """An interface for collecting metrics/counters in EnvironmentLoop."""
 
-  def observe(self, env: Environment, action: NestedArray,
-              observation: NestedArray, reward: float) -> None:
-    """Records one environment step."""
+    def observe(
+        self,
+        env: Environment,
+        action: NestedArray,
+        observation: NestedArray,
+        reward: float,
+    ) -> None:
+        """Records one environment step."""
 
-  def get_metrics(self) -> Dict[str, Number]:
-    """Returns metrics collected for the current episode."""
+    def get_metrics(self) -> Dict[str, Number]:
+        """Returns metrics collected for the current episode."""

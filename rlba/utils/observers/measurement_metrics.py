@@ -23,48 +23,52 @@ import numpy as np
 
 
 class MeasurementObserver:
-  """Observer the provides statistics for measurements at every timestep.
+    """Observer the provides statistics for measurements at every timestep.
 
-  This assumes the measurements is a multidimensional array with a static spec.
-  Warning! It is not intended to be used for high dimensional observations.
+    This assumes the measurements is a multidimensional array with a static spec.
+    Warning! It is not intended to be used for high dimensional observations.
 
-  self._measurements: List[np.ndarray]
-  """
+    self._measurements: List[np.ndarray]
+    """
 
-  def __init__(self):
-    self._measurements = []
+    def __init__(self):
+        self._measurements = []
 
-  def observe(self, env: Environment, action: NestedArray,
-              observation: NestedArray) -> None:
-    """Records one environment step."""
-    self._measurements.append(observation)
+    def observe(
+        self, env: Environment, action: NestedArray, observation: NestedArray
+    ) -> None:
+        """Records one environment step."""
+        self._measurements.append(observation)
 
-  def get_metrics(self) -> Mapping[str, List[base.Number]]:
-    """Returns metrics collected for the current episode."""
-    aggregate_metrics = {}
-    if not self._measurements:
-      return aggregate_metrics
+    def get_metrics(self) -> Mapping[str, List[base.Number]]:
+        """Returns metrics collected for the current episode."""
+        aggregate_metrics = {}
+        if not self._measurements:
+            return aggregate_metrics
 
-    metrics = {
-        'measurement_max': np.max(self._measurements, axis=0),
-        'measurement_min': np.min(self._measurements, axis=0),
-        'measurement_mean': np.mean(self._measurements, axis=0),
-        'measurement_p25': np.percentile(self._measurements, q=25., axis=0),
-        'measurement_p50': np.percentile(self._measurements, q=50., axis=0),
-        'measurement_p75': np.percentile(self._measurements, q=75., axis=0),
-    }
-    for index, sub_observation_metric in np.ndenumerate(
-        metrics['measurement_max']):
-      aggregate_metrics[
-          f'measurement{list(index)}_max'] = sub_observation_metric
-      aggregate_metrics[f'measurement{list(index)}_min'] = metrics[
-          'measurement_min'][index]
-      aggregate_metrics[f'measurement{list(index)}_mean'] = metrics[
-          'measurement_mean'][index]
-      aggregate_metrics[f'measurement{list(index)}_p50'] = metrics[
-          'measurement_p50'][index]
-      aggregate_metrics[f'measurement{list(index)}_p25'] = metrics[
-          'measurement_p25'][index]
-      aggregate_metrics[f'measurement{list(index)}_p75'] = metrics[
-          'measurement_p75'][index]
-    return aggregate_metrics
+        metrics = {
+            "measurement_max": np.max(self._measurements, axis=0),
+            "measurement_min": np.min(self._measurements, axis=0),
+            "measurement_mean": np.mean(self._measurements, axis=0),
+            "measurement_p25": np.percentile(self._measurements, q=25.0, axis=0),
+            "measurement_p50": np.percentile(self._measurements, q=50.0, axis=0),
+            "measurement_p75": np.percentile(self._measurements, q=75.0, axis=0),
+        }
+        for index, sub_observation_metric in np.ndenumerate(metrics["measurement_max"]):
+            aggregate_metrics[f"measurement{list(index)}_max"] = sub_observation_metric
+            aggregate_metrics[f"measurement{list(index)}_min"] = metrics[
+                "measurement_min"
+            ][index]
+            aggregate_metrics[f"measurement{list(index)}_mean"] = metrics[
+                "measurement_mean"
+            ][index]
+            aggregate_metrics[f"measurement{list(index)}_p50"] = metrics[
+                "measurement_p50"
+            ][index]
+            aggregate_metrics[f"measurement{list(index)}_p25"] = metrics[
+                "measurement_p25"
+            ][index]
+            aggregate_metrics[f"measurement{list(index)}_p75"] = metrics[
+                "measurement_p75"
+            ][index]
+        return aggregate_metrics
