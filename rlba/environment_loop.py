@@ -86,6 +86,7 @@ class EnvironmentLoop:
     # For evaluation, this keeps track of the total undiscounted reward
     # accumulated.
     cumulative_return = 0.0
+    result_list = []
 
     # Run an episode.
     while n_step < max_n_step:
@@ -120,4 +121,5 @@ class EnvironmentLoop:
         result.update(observer.get_metrics())
     
       self._logger.write(result)
-    return result
+      result_list.append(result)
+    return result_list

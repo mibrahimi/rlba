@@ -92,8 +92,8 @@ class MultipleLogisticEnv(object):
     action_feature = self._get_action_feature(action)
     embedding = action_feature.T @ self._theta
     logits = embedding @ self._output_features
-    exp_logits = np.exp(logits)
-    probs = exp_logits / (1 + exp_logits)
+    exp_logits = np.exp(-logits)
+    probs = 1 / (1 + exp_logits)
     return probs
 
   @property
