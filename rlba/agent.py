@@ -31,7 +31,7 @@ class Agent(Protocol):
     , e.g. a simple RL loop where each step is of the
     form:
 
-      # Take a step and observe.
+      # Take two step and observe.
       action = agent.select_action(timestep.observation)
       obs = env.step()
       actor.observe(obs)
