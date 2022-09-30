@@ -43,7 +43,11 @@ class RegretObserver:
         self._metrics = {}
 
     def observe(
-        self, env: Environment, action: NestedArray, observation: NestedArray
+        self,
+        env: Environment,
+        action: NestedArray,
+        observation: NestedArray,
+        reward: float,
     ) -> None:
         """Records one environment step."""
         assert isinstance(
@@ -60,6 +64,7 @@ class RegretObserver:
         self._metrics = {
             "observer_step": self._observer_step,
             "action": action,
+            "reward": reward,
             "exp_reward": exp_reward,
             "regret": regret,
             "cumulative_regret": self._cumulative_regret,
