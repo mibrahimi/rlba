@@ -1,3 +1,4 @@
 from rlba.environments.random import RandomEnvironment
 from rlba.environments.bernoulli_bandit import BernoulliBanditEnv
 from rlba.environments.multi_logistic import MultipleLogisticEnv
+from rlba.environments.assortment import AssortmentRecommendationEnv
