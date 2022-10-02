@@ -15,42 +15,46 @@
 """Tests for action_metrics_observers."""
 
 
+from typing import Callable
 from rlba.environment import Environment
 from rlba.testing import fakes
-from rlba.types import ArraySpec, DiscreteArraySpec
+from rlba.types import Array, ArraySpec, DiscreteArraySpec
 from rlba.utils.observers import bandit
 import numpy as np
 
 from absl.testing import absltest, parameterized
 
 
-def _make_fake_env(num_action: int) -> Environment:
+def _make_fake_env(num_action: int, reward_fn: Callable[[int], Array]) -> Environment:
     action_spec = DiscreteArraySpec(num_action, dtype=np.int32)
     observation_spec = ArraySpec(shape=(10, 5), dtype=np.float32)
-    return fakes.FakeEnvironment(action_spec, observation_spec, 0)
+    EnvClass = fakes.FakeEnvironment
+    reward_array = reward_fn(num_action)
+    EnvClass.expected_reward = lambda s, a: reward_array[a]
+    EnvClass.optimal_expected_reward = lambda s: reward_array.max()
+    return EnvClass(action_spec, observation_spec, 0)
 
 
-_NUM_ACTION = 10
-_FAKE_ENV = _make_fake_env(_NUM_ACTION)
-_ACTION = fakes.generate_from_spec(_FAKE_ENV.action_spec)
-_OBSERVATION = fakes.generate_from_spec(_FAKE_ENV.observation_spec)
-_ZEROS_REWARD_FN = lambda e: np.zeros(e.action_spec.num_values)
-_ONES_REWARD_FN = lambda e: np.ones(e.action_spec.num_values)
-_RANGE_REWARD_FN = lambda e: np.arange(e.action_spec.num_values)
-
-
-class BanditRegretTest(absltest.TestCase):
+class BanditRegretTest(parameterized.TestCase):
     def test_observe_nothing(self):
-        observer = bandit.RegretObserver(_ZEROS_REWARD_FN)
+        observer = bandit.RegretObserver()
         self.assertEqual({}, observer.get_metrics())
 
-    def test_observe_reward_zero(self):
-        observer = bandit.RegretObserver(_ZEROS_REWARD_FN)
-        observer.observe(env=_FAKE_ENV, action=_ACTION, observation=_OBSERVATION)
+    @parameterized.parameters([1, 3, 5])
+    def test_observe_reward_zero(self, n_action: int):
+        fake_env = _make_fake_env(n_action, np.zeros)
+        action = fakes.generate_from_spec(fake_env.action_spec)
+        observation = fakes.generate_from_spec(fake_env.observation_spec)
+        observer = bandit.RegretObserver()
+        reward = np.random.random()
+        observer.observe(
+            env=fake_env, action=action, observation=observation, reward=reward
+        )
         self.assertEqual(
             {
                 "observer_step": 1,
-                "action": _ACTION,
+                "action": action,
+                "reward": reward,
                 "exp_reward": 0.0,
                 "regret": 0.0,
                 "cumulative_regret": 0.0,
@@ -58,13 +62,21 @@ class BanditRegretTest(absltest.TestCase):
             observer.get_metrics(),
         )
 
-    def test_observe_reward_one(self):
-        observer = bandit.RegretObserver(_ONES_REWARD_FN)
-        observer.observe(env=_FAKE_ENV, action=_ACTION, observation=_OBSERVATION)
+    @parameterized.parameters([1, 3, 5])
+    def test_observe_reward_one(self, n_action: int):
+        fake_env = _make_fake_env(n_action, np.ones)
+        action = fakes.generate_from_spec(fake_env.action_spec)
+        observation = fakes.generate_from_spec(fake_env.observation_spec)
+        observer = bandit.RegretObserver()
+        reward = np.random.random()
+        observer.observe(
+            env=fake_env, action=action, observation=observation, reward=reward
+        )
         self.assertEqual(
             {
                 "observer_step": 1,
-                "action": _ACTION,
+                "action": action,
+                "reward": reward,
                 "exp_reward": 1.0,
                 "regret": 0.0,
                 "cumulative_regret": 0.0,
@@ -72,58 +84,79 @@ class BanditRegretTest(absltest.TestCase):
             observer.get_metrics(),
         )
 
-    def test_observe_reward_range(self):
-        observer = bandit.RegretObserver(_RANGE_REWARD_FN)
-        observer.observe(env=_FAKE_ENV, action=_ACTION, observation=_OBSERVATION)
-        self.assertEqual(
-            {
-                "observer_step": 1,
-                "action": _ACTION,
-                "exp_reward": 0.0,
-                "regret": _NUM_ACTION - 1.0,
-                "cumulative_regret": _NUM_ACTION - 1.0,
-            },
-            observer.get_metrics(),
+    @parameterized.parameters([1, 3, 5])
+    def test_observe_reward_range(self, n_action: int):
+        fake_env = _make_fake_env(n_action, np.arange)
+        action = fakes.generate_from_spec(fake_env.action_spec)
+        observation = fakes.generate_from_spec(fake_env.observation_spec)
+        observer = bandit.RegretObserver()
+        reward = np.random.random()
+        observer.observe(
+            env=fake_env, action=action, observation=observation, reward=reward
         )
-
-    def test_observe_multiple_step(self):
-        observer = bandit.RegretObserver(_RANGE_REWARD_FN)
-        action = 1
-        observer.observe(env=_FAKE_ENV, action=action, observation=_OBSERVATION)
-        cumulative_regret = _NUM_ACTION - action - 1.0
         self.assertEqual(
             {
                 "observer_step": 1,
                 "action": action,
+                "reward": reward,
+                "exp_reward": 0.0,
+                "regret": n_action - 1.0,
+                "cumulative_regret": n_action - 1.0,
+            },
+            observer.get_metrics(),
+        )
+
+    @parameterized.parameters([6, 8, 13])
+    def test_observe_multiple_step(self, n_action: int):
+        fake_env = _make_fake_env(n_action, np.arange)
+        observation = fakes.generate_from_spec(fake_env.observation_spec)
+        observer = bandit.RegretObserver()
+        reward = np.random.random()
+        action = 1
+        observer.observe(
+            env=fake_env, action=action, observation=observation, reward=reward
+        )
+        cumulative_regret = n_action - action - 1.0
+        self.assertEqual(
+            {
+                "observer_step": 1,
+                "action": action,
+                "reward": reward,
                 "exp_reward": action,
-                "regret": _NUM_ACTION - action - 1.0,
+                "regret": n_action - action - 1.0,
                 "cumulative_regret": cumulative_regret,
             },
             observer.get_metrics(),
         )
         action = 3
-        observer.observe(env=_FAKE_ENV, action=action, observation=_OBSERVATION)
-        cumulative_regret += _NUM_ACTION - action - 1.0
+        observer.observe(
+            env=fake_env, action=action, observation=observation, reward=reward
+        )
+        cumulative_regret += n_action - action - 1.0
         self.assertEqual(
             {
                 "observer_step": 2,
                 "action": action,
+                "reward": reward,
                 "exp_reward": action,
-                "regret": _NUM_ACTION - action - 1.0,
+                "regret": n_action - action - 1.0,
                 "cumulative_regret": cumulative_regret,
             },
             observer.get_metrics(),
         )
 
         action = 5
-        observer.observe(env=_FAKE_ENV, action=action, observation=_OBSERVATION)
-        cumulative_regret += _NUM_ACTION - action - 1.0
+        observer.observe(
+            env=fake_env, action=action, observation=observation, reward=reward
+        )
+        cumulative_regret += n_action - action - 1.0
         self.assertEqual(
             {
                 "observer_step": 3,
                 "action": action,
+                "reward": reward,
                 "exp_reward": action,
-                "regret": _NUM_ACTION - action - 1.0,
+                "regret": n_action - action - 1.0,
                 "cumulative_regret": cumulative_regret,
             },
             observer.get_metrics(),

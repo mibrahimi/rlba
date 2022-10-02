@@ -20,7 +20,6 @@ from rlba.environment import Environment
 from rlba.types import Array, NestedArray
 from rlba.utils.observers import base
 import numbers
-import numpy as np
 
 
 class RegretObserver:
@@ -31,13 +30,13 @@ class RegretObserver:
 
     """
 
-    def __init__(self, exp_reward_fn: Callable[[Environment], Array]):
+    def __init__(self):
+        """Observe instantanous and cumulative expected regret.
+
+        This observer expects the environment to have exposed two methods: (i)
+        env.expected_reward(action) and (ii) env.optimal_expected_reward() which
+        returns the current expected and optimal expected rewards respectively.
         """
-        Args:
-            exp_reward_fn: a callable that given the environment returns an
-            Array representing the expected reward for taking each action.
-        """
-        self._exp_reward_fn = exp_reward_fn
         self._cumulative_regret = 0.0
         self._observer_step = 0
         self._metrics = {}
@@ -50,14 +49,8 @@ class RegretObserver:
         reward: float,
     ) -> None:
         """Records one environment step."""
-        assert isinstance(
-            action, numbers.Number
-        ), "RegretObserver only works with scalar actions"
-        assert action == int(action), "RegretObserver only works with integer actions"
-        action = int(action)
-        exp_rewards = self._exp_reward_fn(env)
-        opt_reward = exp_rewards.max()
-        exp_reward = exp_rewards[action]
+        exp_reward = env.expected_reward(action)
+        opt_reward = env.optimal_expected_reward()
         regret = opt_reward - exp_reward
         self._cumulative_regret += regret
         self._observer_step += 1

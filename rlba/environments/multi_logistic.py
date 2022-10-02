@@ -25,6 +25,7 @@ from rlba.types import (
     ArraySpec,
     BoundedArraySpec,
     DiscreteArraySpec,
+    NestedArray,
     NestedArraySpec,
     NestedDiscreteArraySpec,
 )
@@ -65,26 +66,6 @@ class MultipleLogisticEnv(object):
 
         self._reset(seed)
 
-    def step(self, action: int) -> Array:
-        """Step the environment according to the action and returns an `observation`.
-
-        Args:
-          action: an integer corresponding to the arm index.
-
-        Returns:
-          An `Observation` A NumPy array of bools. Must conform to the
-              specification returned by `observation_spec()`.
-        """
-        try:
-            action = int(action)
-        except TypeError:
-            TypeError("Action does not seem to be convertable to an int")
-        if action >= self._action_spec.num_values:
-            raise ValueError("action is larger than number of available arms.")
-
-        probs = self._compute_output_probs(action)
-        return (self._rng.random(self._output_dim) <= probs).astype(np.float32)
-
     def _reset(self, seed: int):
         """ "Create a new instance of the environment and initialize the features."""
         self._rng = np.random.default_rng(seed)
@@ -104,6 +85,10 @@ class MultipleLogisticEnv(object):
         self._action_features = np.r_[
             self._action_features, np.ones((1, self._num_action))
         ]
+        self._output_probs = np.array(
+            [self._compute_output_probs(a) for a in range(self._num_action)],
+        ).T
+        self._optimal_expected_reward = self._output_probs[0, :].max()
 
     def _get_action_feature(self, action):
         """Validate the action and return corresponding feature vector."""
@@ -120,15 +105,35 @@ class MultipleLogisticEnv(object):
         probs = 1 / (1 + exp_logits)
         return probs
 
-    @property
-    def output_mean(self) -> Array:
-        """Returns the expected value of the outputs for each possible action.
+    def _validate_action(self, action: NestedArray) -> int:
+        try:
+            action = int(action)
+        except TypeError:
+            TypeError("Action does not seem to be convertable to an int")
+        if action >= self._action_spec.num_values:
+            raise ValueError("action is larger than number of available arms.")
+        return action
 
-        This methos is for evaluation purposes only. It should not be used as part of
-        agent/environment interaction."""
-        return np.array(
-            [self._compute_output_probs(a) for a in range(self._num_action)]
-        )
+    def step(self, action: NestedArray) -> Array:
+        """Step the environment according to the action and returns an `observation`.
+
+        Args:
+          action: an integer corresponding to the arm index.
+
+        Returns:
+          An `Observation` A NumPy array of bools. Must conform to the
+              specification returned by `observation_spec()`.
+        """
+
+        action = self._validate_action(action)
+        probs = self._compute_output_probs(action)
+        return (self._rng.random(self._output_dim) <= probs).astype(np.float32)
+
+    def expected_reward(self, action):
+        return self._output_probs[0, action]
+
+    def optimal_expected_reward(self):
+        return self._optimal_expected_reward
 
     @property
     def observation_spec(self) -> NestedArraySpec:
