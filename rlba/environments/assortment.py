@@ -54,7 +54,9 @@ class AssortmentRecommendationEnv:
 
     def __init__(self, n_item: int, n_slot, seed: int, sigma_p=1.0):
         self._n_item = n_item  # Total number of items that can be recommended
-        self._n_slot = n_slot  # Number of available sltos
+        self._n_slot = (
+            n_slot  # Number of available sltos. #selected items should be <= n_slot
+        )
         self._sigma_p = sigma_p
         self._reset(seed)
 
@@ -86,7 +88,7 @@ class AssortmentRecommendationEnv:
         assert len(action) == self._n_item, f"action has wrong dimension {len(action)}."
         action = (action > 0).astype(np.float32)  # Convert action to 0/1
         assert (
-            action.sum() == self._n_slot
+            action.sum() <= self._n_slot
         ), f"action has wrong number of non zero elements: {action.sum()}."
         return action
 
