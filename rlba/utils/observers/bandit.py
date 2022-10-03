@@ -14,7 +14,8 @@
 
 """An observer that tracks regret in a bandit setting."""
 
-from typing import Callable, Mapping, List
+from typing import Callable, Iterable, List, Mapping, Optional
+import numpy as np
 
 from rlba.environment import Environment
 from rlba.types import Array, NestedArray
@@ -30,13 +31,30 @@ class RegretObserver:
 
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        expected_reward_fn: Optional[
+            Callable[[Environment, NestedArray], float]
+        ] = None,
+        opt_expected_reward_fn: Optional[Callable[[Environment], float]] = None,
+        cache_expected_reward: bool = True,
+    ):
         """Observe instantanous and cumulative expected regret.
+        Args:
+            expected_reward_fn: a function that given (env, action) returns the
+                expected reward. If None we assume env provides a method
+                `expected_reward` with the same signature.
+            opt_expected_reward_fn: a function that given (env) returns the
+                optimal expected reward. If None we assume env provides a method
+                `opt_expected_reward` with the same signature.
+            cache_expected_reward: if True assume expected rewards are static and cache
+                the computed values.
 
-        This observer expects the environment to have exposed two methods: (i)
-        env.expected_reward(action) and (ii) env.optimal_expected_reward() which
-        returns the current expected and optimal expected rewards respectively.
         """
+        self._expected_reward_fn = expected_reward_fn
+        self._opt_expected_reward_fn = opt_expected_reward_fn
+        self._cache_expected_reward = cache_expected_reward
+
         self._cumulative_regret = 0.0
         self._observer_step = 0
         self._metrics = {}
@@ -49,9 +67,30 @@ class RegretObserver:
         reward: float,
     ) -> None:
         """Records one environment step."""
-        exp_reward = env.expected_reward(action)
-        opt_reward = env.optimal_expected_reward()
-        regret = opt_reward - exp_reward
+        if isinstance(action, np.ndarray):
+            # a quick hack for unhashable type error in the cache.
+            action = tuple(action)
+        if self._observer_step == 0:
+            if self._expected_reward_fn is None:
+                self._expected_reward_fn = lambda e, a: e.expected_reward(a)
+            if self._opt_expected_reward_fn is None:
+                self._opt_expected_reward_fn = lambda e: e.optimal_expected_reward()
+            if self._cache_expected_reward:
+                self._exp_rewards = {}
+                self._opt_exp_reward = self._opt_expected_reward_fn(env)
+
+        if self._cache_expected_reward:
+            if action in self._exp_rewards:
+                exp_reward = self._exp_rewards[action]
+            else:
+                exp_reward = self._expected_reward_fn(env, action)
+                self._exp_rewards[action] = exp_reward
+            opt_exp_reward = self._opt_exp_reward
+        else:
+            opt_exp_reward = self._opt_expected_reward_fn(env)
+            exp_reward = self._expected_reward_fn(env, action)
+
+        regret = opt_exp_reward - exp_reward
         self._cumulative_regret += regret
         self._observer_step += 1
         self._metrics = {
