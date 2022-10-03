@@ -30,7 +30,7 @@ from rlba.types import (
 )
 
 
-def _choose_optimal_assortment(theta, n_slot, rng=None):
+def choose_optimal_assortment(theta, n_slot, rng=None):
     if rng is None:
         rng = np.random.default_rng()
     n_item = len(theta)
@@ -116,7 +116,7 @@ class AssortmentRecommendationEnv:
         return probs
 
     def _compute_opt_selection_probs(self):
-        action = _choose_optimal_assortment(self._theta, self._n_slot, self._rng)
+        action = choose_optimal_assortment(self._theta, self._n_slot, self._rng)
         return self._compute_selection_probs(action)
 
     def expected_reward(self, action):

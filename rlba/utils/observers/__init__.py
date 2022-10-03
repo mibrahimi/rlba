@@ -15,6 +15,7 @@
 """RLBA observers."""
 
 from rlba.utils.observers.action_metrics import ActionStatsObserver
+from rlba.utils.observers.bandit import RegretObserver
 from rlba.utils.observers.base import EnvLoopObserver
 from rlba.utils.observers.base import Number
 from rlba.utils.observers.env_info import EnvInfoObserver

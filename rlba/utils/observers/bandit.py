@@ -14,7 +14,7 @@
 
 """An observer that tracks regret in a bandit setting."""
 
-from typing import Callable, Iterable, List, Mapping, Optional
+from typing import Any, Callable, Iterable, List, Mapping, Optional
 import numpy as np
 
 from rlba.environment import Environment
@@ -38,6 +38,7 @@ class RegretObserver:
         ] = None,
         opt_expected_reward_fn: Optional[Callable[[Environment], float]] = None,
         cache_expected_reward: bool = True,
+        action_key_fn: Callable[[NestedArray], Any] = lambda a: a,
     ):
         """Observe instantanous and cumulative expected regret.
         Args:
@@ -49,11 +50,15 @@ class RegretObserver:
                 `opt_expected_reward` with the same signature.
             cache_expected_reward: if True assume expected rewards are static and cache
                 the computed values.
+            action_key_fn: a function to transform action into an action key for
+                to be used for caching the results. This is useful when action is not
+                hashable, e.g., a numpy array.
 
         """
         self._expected_reward_fn = expected_reward_fn
         self._opt_expected_reward_fn = opt_expected_reward_fn
         self._cache_expected_reward = cache_expected_reward
+        self._action_key_fn = action_key_fn
 
         self._cumulative_regret = 0.0
         self._observer_step = 0
@@ -67,9 +72,6 @@ class RegretObserver:
         reward: float,
     ) -> None:
         """Records one environment step."""
-        if isinstance(action, np.ndarray):
-            # a quick hack for unhashable type error in the cache.
-            action = tuple(action)
         if self._observer_step == 0:
             if self._expected_reward_fn is None:
                 self._expected_reward_fn = lambda e, a: e.expected_reward(a)
@@ -80,11 +82,12 @@ class RegretObserver:
                 self._opt_exp_reward = self._opt_expected_reward_fn(env)
 
         if self._cache_expected_reward:
-            if action in self._exp_rewards:
-                exp_reward = self._exp_rewards[action]
+            action_key = self._action_key_fn(action)
+            if action_key in self._exp_rewards:
+                exp_reward = self._exp_rewards[action_key]
             else:
                 exp_reward = self._expected_reward_fn(env, action)
-                self._exp_rewards[action] = exp_reward
+                self._exp_rewards[action_key] = exp_reward
             opt_exp_reward = self._opt_exp_reward
         else:
             opt_exp_reward = self._opt_expected_reward_fn(env)
