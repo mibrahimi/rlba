@@ -26,7 +26,7 @@ from rlba.types import ArraySpec, DiscreteArraySpec
 class MultipleLogisticEnvTest(absltest.TestCase):
 
     env = MultipleLogisticEnv(
-        action_feature_dim=5, embedding_dim=3, output_dim=2, num_action=7, seed=0
+        action_feature_dim=5, embedding_dim=3, output_dim=2, input_dim=7, seed=0
     )
 
     def test_correct_dimensions(self):
@@ -39,10 +39,10 @@ class MultipleLogisticEnvTest(absltest.TestCase):
             action_feature_dim=action_feature_dim,
             embedding_dim=embedding_dim,
             output_dim=output_dim,
-            num_action=num_action,
+            input_dim=num_action,
             seed=seed,
         )
-        self.assertEqual(env._action_features.shape, (action_feature_dim, num_action))
+        self.assertEqual(env._input_features.shape, (action_feature_dim, num_action))
         self.assertEqual(env._output_features.shape, (embedding_dim, output_dim))
         self.assertEqual(env._theta.shape, (action_feature_dim, embedding_dim))
 
@@ -56,11 +56,11 @@ class MultipleLogisticEnvTest(absltest.TestCase):
             action_feature_dim=action_feature_dim,
             embedding_dim=embedding_dim,
             output_dim=output_dim,
-            num_action=num_action,
+            input_dim=num_action,
             seed=seed,
         )
 
-        env._action_features = np.zeros_like(env._action_features)
+        env._input_features = np.zeros_like(env._input_features)
         obs = np.array([env.step(i % num_action) for i in range(1000)])
         self.assertLess(np.abs(np.sum(obs) / obs.size - 0.5), 0.05)
 

@@ -16,7 +16,7 @@
 """
 
 
-from typing import Iterator
+from typing import Tuple
 
 import numpy as np
 from numpy.random import default_rng
@@ -40,22 +40,22 @@ class MultipleLogisticEnv(object):
     def __init__(
         self,
         action_feature_dim: int,
+        input_dim: int,
         embedding_dim: int,
         output_dim: int,
-        num_action: int,
         sigma_p: float = 1.0,
         seed: int = 0,
     ) -> None:
         self._action_feature_dim = action_feature_dim
+        self._input_dim = input_dim
         self._embedding_dim = embedding_dim
         self._output_dim = output_dim
-        self._num_action = num_action
         self._sigma_p = sigma_p
         self._theta = None
         self._output_features = None
         self.action_features = None
 
-        self._action_spec = DiscreteArraySpec(num_action, name="action spec")
+        self._action_spec = DiscreteArraySpec(input_dim, name="action spec")
         self._observation_spec: ArraySpec = BoundedArraySpec(
             shape=(output_dim,),
             dtype=bool,
@@ -76,43 +76,57 @@ class MultipleLogisticEnv(object):
         self._output_features = np.abs(
             self._rng.normal(size=(self._embedding_dim, self._output_dim))
         )
-        self._action_features = self._rng.normal(
-            size=(self._action_feature_dim - 1, self._num_action)
+        self._input_features = self._rng.normal(
+            size=(self._action_feature_dim - 1, self._input_dim)
         )
-        self._action_features /= np.linalg.norm(
-            self._action_features, axis=0, keepdims=True
+        self._input_features /= np.linalg.norm(
+            self._input_features, axis=0, keepdims=True
         )
-        self._action_features = np.r_[
-            self._action_features, np.ones((1, self._num_action))
+        self._input_features = np.r_[
+            self._input_features, np.ones((1, self._input_dim))
         ]
         self._output_probs = np.array(
-            [self._compute_output_probs(a) for a in range(self._num_action)],
+            [
+                self._compute_output_probs(iidx, np.arange(self._output_dim))
+                for iidx in range(self._input_dim)
+            ],
         ).T
         self._optimal_expected_reward = self._output_probs[0, :].max()
 
-    def _get_action_feature(self, action):
-        """Validate the action and return corresponding feature vector."""
-        assert self._action_features is not None, "Please first reset the environment."
-        action = np.array(action)
-        action_feature = self._action_features[:, action]
-        return action_feature
+    def _get_input_feature(self, input_idx):
+        """Returns corresponding input feature vector for a given action."""
+        return self._input_features[:, input_idx]
 
-    def _compute_output_probs(self, action):
-        action_feature = self._get_action_feature(action)
-        embedding = action_feature.T @ self._theta
-        logits = embedding @ self._output_features
+    def _get_output_feature(self, output_idxs):
+        """Returns corresponding input feature vector for a given action."""
+        output_idxs = np.array(output_idxs)
+        return self._output_features[:, output_idxs]
+
+    def _compute_output_probs(self, input_idx: int, output_idxs: Array):
+        input_feature = self._get_input_feature(input_idx)
+        output_features = self._get_output_feature(output_idxs)
+        embedding = input_feature.T @ self._theta
+        logits = embedding @ output_features
         exp_logits = np.exp(-logits)
         probs = 1 / (1 + exp_logits)
         return probs
 
-    def _validate_action(self, action: NestedArray) -> int:
-        try:
-            action = int(action)
+    def _validate_action(self, action: NestedArray) -> Tuple[int, Array]:
+        try:  # action only specifies the input (curriculum in AI tutor example)
+            input_idx = int(action)
+            output_idxs = np.arange(self._output_dim)  # Assume all outputs are returned
+        except TypeError:
+            input_idx, output_idxs = action
+            input_idx = int(input_idx)
+            output_idxs = np.insert(np.array(output_idxs), 0, 0)
         except TypeError:
             TypeError("Action does not seem to be convertable to an int")
-        if action >= self._action_spec.num_values:
-            raise ValueError("action is larger than number of available arms.")
-        return action
+        if input_idx >= self._input_dim:
+            raise ValueError("input index is larger than number of available arms.")
+        if output_idxs.max() >= self._output_dim:
+            raise ValueError("output index is larger than number of available arms.")
+
+        return input_idx, output_idxs
 
     def step(self, action: NestedArray) -> Array:
         """Step the environment according to the action and returns an `observation`.
@@ -125,9 +139,9 @@ class MultipleLogisticEnv(object):
               specification returned by `observation_spec()`.
         """
 
-        action = self._validate_action(action)
-        probs = self._compute_output_probs(action)
-        return (self._rng.random(self._output_dim) <= probs).astype(np.float32)
+        input_idx, output_idxs = self._validate_action(action)
+        probs = self._compute_output_probs(input_idx, output_idxs)
+        return (self._rng.random(len(output_idxs)) <= probs).astype(np.float32)
 
     def expected_reward(self, action):
         return self._output_probs[0, action]
