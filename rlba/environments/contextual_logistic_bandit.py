@@ -60,12 +60,13 @@ class ContextualLogisticBandit:
             maximum=num_contexts,
             name="observation spec",
         )
+        self._rng = np.random.default_rng(seed)
         self._reset_context()
         self._prev_context = None
 
     def _reset_context(self):
         """This function resets the context. For internal use only."""
-        self.context = np.random.randint(low=0, high=self.num_contexts)
+        self.context = self._rng.integers(low=0, high=self.num_contexts)
         self.context_features = self.feature[self.context, :, :]
 
     def expected_reward(self, action):
@@ -117,7 +118,7 @@ class ContextualLogisticBandit:
         assert action >= 0 and action < self.num_actions
 
         mean_reward = self.rewards[self.context, action]
-        reward = np.random.binomial(1, mean_reward)
+        reward = self._rng.binomial(1, mean_reward)
         self._prev_context = self._get_context()
         self._reset_context()
         context_index = self._get_context()
