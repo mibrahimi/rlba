@@ -30,34 +30,34 @@ from rlba.types import (
 class ContextualLogisticBandit:
     """This class creates a contextual logistic bandit environment."""
 
-    def __init__(self, num_actions, num_contexts, dim, seed, sigma_p=1):
-        self.num_actions = num_actions
-        self.num_contexts = num_contexts
-        self.dim = dim
-        self.sigma_p = sigma_p
-        self.sigma_p_squared = sigma_p**2
-        self.theta = sigma_p * np.random.randn(dim)
+    def __init__(self, n_actions, n_contexts, dim, seed, sigma_p=1):
+        self._n_actions = n_actions
+        self._n_contexts = n_contexts
+        self._dim = dim
+        self._sigma_p = sigma_p
+        self._sigma_p_squared = sigma_p**2
+        self._theta = sigma_p * np.random.randn(dim)
 
         # Matrix of Phi_{S,A}
-        feature = np.random.randn(num_contexts, num_actions, dim)
-        self.feature = feature/np.linalg.norm(feature, axis=-1, keepdims=True)
+        feature = np.random.randn(n_contexts, n_actions, dim)
+        self._feature = feature/np.linalg.norm(feature, axis=-1, keepdims=True)
 
-        exp_logits = np.exp(np.tensordot(self.feature,
-                                         self.theta, axes=([-1], [0])))
+        exp_logits = np.exp(np.tensordot(self._feature,
+                                         self._theta, axes=([-1], [0])))
 
         # Reward Probabilities for each (S,A)
-        self.rewards = exp_logits/(1 + exp_logits)
+        self._rewards = exp_logits/(1 + exp_logits)
         # Maximum Reward for each context S
-        self.values = np.max(self.rewards, axis=1, keepdims=True)
+        self._values = np.max(self._rewards, axis=1, keepdims=True)
         # Matrix of Regrets
-        self.regrets = self.values - self.rewards
+        self._regrets = self._values - self._rewards
 
-        self._action_spec = DiscreteArraySpec(num_actions, name="action spec")
+        self._action_spec = DiscreteArraySpec(n_actions, name="action spec")
         self._observation_spec: ArraySpec = BoundedArraySpec(
             shape=(2,),
             dtype=int,
             minimum=0,
-            maximum=num_contexts,
+            maximum=n_contexts,
             name="observation spec",
         )
         self._rng = np.random.default_rng(seed)
@@ -66,20 +66,20 @@ class ContextualLogisticBandit:
 
     def _reset_context(self):
         """This function resets the context. For internal use only."""
-        self.context = self._rng.integers(low=0, high=self.num_contexts)
-        self.context_features = self.feature[self.context, :, :]
+        self._context = self._rng.integers(low=0, high=self._n_contexts)
+        self._context_features = self._feature[self._context, :, :]
 
     def expected_reward(self, action):
-        return self.rewards[self._prev_context, action]
+        return self._rewards[self._prev_context, action]
 
     def optimal_expected_reward(self):
-        return np.max(self.rewards[self._prev_context])
+        return np.max(self._rewards[self._prev_context])
 
     def _get_context(self):
         """ This function returns the current context and the associated feature. For internal use only.
             Use get_features() to obtain relevant information for your agent.
         """
-        return self.context
+        return self._context
 
     def output_means(self) -> Array:
         """ Returns a num_context x num_actions array of expected rewards  
@@ -87,7 +87,7 @@ class ContextualLogisticBandit:
            This method is for evaluation purposes only. It should not be used as part of
            agent/environment interaction.
         """
-        return self.rewards
+        return self._rewards
 
     def output_regrets(self) -> Array:
         """ Returns a num_context x num_actions array of expected regrets
@@ -95,14 +95,14 @@ class ContextualLogisticBandit:
             This method is for evaluation purposes only. It should not be used as part of
             agent/environment interaction.
         """
-        return self.regrets
+        return self._regrets
 
     def get_features(self, context_index) -> Array:
         """ Returns the features for each action associated with context context_index.
             Args:
                 context_index: the integer index of the context for which you want features.
         """
-        return self.feature[context_index, :, :]
+        return self._feature[context_index, :, :]
 
     def step(self, action: int) -> Array:
         """ This function simulates for one step.
@@ -117,7 +117,7 @@ class ContextualLogisticBandit:
         """
         assert action >= 0 and action < self.num_actions
 
-        mean_reward = self.rewards[self.context, action]
+        mean_reward = self._rewards[self._context, action]
         reward = self._rng.binomial(1, mean_reward)
         self._prev_context = self._get_context()
         self._reset_context()
