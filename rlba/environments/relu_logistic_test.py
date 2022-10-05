@@ -33,7 +33,7 @@ class ReLULogisticBanditTest(absltest.TestCase):
         
         fixed_action = 0
 
-        reward_probs = env._rewards
+        reward_probs = env._exp_reward
         obs = np.array([env.step(fixed_action)[0] for i in range(1000)])
         # choosing same action across contexts should give an average over contexts 
         self.assertLess(np.abs(np.mean(obs) - 
