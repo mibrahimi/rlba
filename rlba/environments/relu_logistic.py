@@ -181,10 +181,10 @@ def get_opt_fns(layer_dims: Sequence[int],
                 values act as means to regularize against
         """
         
-        num_samples = len(y)
+        n_samples = len(y)
 
         # compute the loss associated with the log likelihood
-        if num_samples > 0:
+        if n_samples > 0:
             y_hat = model_fn.apply(params, None, x)
             # vector encoding the negative log-likelihood
             loss_vec = -jnp.multiply(y, jnp.log(y_hat))-\
@@ -209,7 +209,7 @@ def get_opt_fns(layer_dims: Sequence[int],
 
         # normalize the loss_prior based on number of samples,
         # since the log-likelihood part is an average
-        loss_prior = loss_prior/num_samples
+        loss_prior = loss_prior/n_samples
         loss = loss_ll + loss_prior
 
         return loss
@@ -221,7 +221,7 @@ def get_opt_fns(layer_dims: Sequence[int],
 def opt_pert_loss(hk_keys: hk.PRNGSequence, 
                   grad_loss_fn, 
                   model_fn, 
-                  num_epochs: int,
+                  n_epochs: int,
                   learning_rate: float,
                   x: chex.Array,
                   y: chex.Array,
@@ -241,7 +241,7 @@ def opt_pert_loss(hk_keys: hk.PRNGSequence,
             inputs
         model_fn: output of hk.transform
             forward function that predicts y given x
-        num_epochs: int
+        n_epochs: int
             number of epochs we train our model for
         learning_rate: float
             non-negative number for the optimizer
@@ -261,11 +261,11 @@ def opt_pert_loss(hk_keys: hk.PRNGSequence,
             if true, loss is printed once every 10 steps
     """
 
-    num_samples = len(y)
+    n_samples = len(y)
 
     if perturb:
         if weights is None:
-            weights = jax.random.exponential(next(hk_keys), shape=[num_samples])
+            weights = jax.random.exponential(next(hk_keys), shape=[n_samples])
 
         if reg_params is None:
             reg_params = model_fn.init(next(hk_keys), x)
@@ -289,7 +289,7 @@ def opt_pert_loss(hk_keys: hk.PRNGSequence,
     opt_state = opt_init(init_params)
     params = init_params
 
-    for i in range(num_epochs):
+    for i in range(n_epochs):
         loss, grads = grad_loss_fn(params, x, y, weights, reg_params)
 
     if verbose and i%10 == 9:
@@ -310,8 +310,8 @@ class ReLULogisticBandit(object):
     """The environment ReLULogisticBandit."""
     def __init__(self, 
                 seed: int, 
-                num_context: int, 
-                num_action: int, 
+                n_context: int, 
+                n_action: int, 
                 layer_dims: Sequence[int], 
                 weight_var: float=1., 
                 bias_var: float=1.,
@@ -322,8 +322,8 @@ class ReLULogisticBandit(object):
         self._hk_keys = hk.PRNGSequence(seed)
 
         # record the properties
-        self._num_context = num_context
-        self._num_action = num_action
+        self._n_context = n_context
+        self._n_action = n_action
 
         self._layer_dims = layer_dims
         self._weight_var = weight_var
@@ -331,7 +331,7 @@ class ReLULogisticBandit(object):
         self._feature_var = feature_var
         self._input_dim = layer_dims[0]
 
-        self._action_spec = DiscreteArraySpec(num_action, name="action spec")
+        self._action_spec = DiscreteArraySpec(n_action, name="action spec")
         self._observation_spec: ArraySpec = BoundedArraySpec(
             shape=(1,),
             dtype=bool,
@@ -347,7 +347,7 @@ class ReLULogisticBandit(object):
         
         # construct features
         self._feature = jnp.sqrt(self._feature_var)*jax.random.normal(
-            next(self._hk_keys), (self._num_context, self._num_action, 
+            next(self._hk_keys), (self._n_context, self._n_action, 
             self._input_dim))
 
         # initialize the model and prameters
@@ -365,7 +365,7 @@ class ReLULogisticBandit(object):
         self._model = lambda x: self._model_fn.apply(self._params, None, x)
 
         # expected reward for each context-action pair
-        # self.exp_reward.shape == (num_context, num_action)
+        # self.exp_reward.shape == (n_context, n_action)
         self._exp_reward = self._model(self._feature)
         self._optimal_exp_reward = jnp.max(self._exp_reward, axis=1, keepdims=True)
 
@@ -374,19 +374,19 @@ class ReLULogisticBandit(object):
     def _sample_new_context(self):
         self._context = int(jax.random.randint(
                 next(self._hk_keys), shape=[1], minval=0,
-                maxval=self._num_context)[0])
+                maxval=self._n_context)[0])
         
     def _validate_action(self, action: NestedArray) -> int:
         try:
             action = int(action)
         except TypeError:
             TypeError("Action does not seem to be convertible to an int")
-        if action >= self._action_spec.num_values:
+        if action >= self._action_spec.n_values:
             raise ValueError("action is larger than number of available arms.")
         return action
 
     def _validate_context(self, context: int) -> int:
-        if context >= self._num_context:
+        if context >= self._n_context:
             raise ValueError("context is larger than number of available contexts.")
         return context
 
