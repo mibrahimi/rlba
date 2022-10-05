@@ -118,7 +118,7 @@ class MultipleLogisticEnv(object):
         except TypeError:
             input_idx, output_idxs = action
             input_idx = int(input_idx)
-            output_idxs = np.array(output_idxs)
+            output_idxs = np.insert(np.array(output_idxs), 0, 0)
         except TypeError:
             TypeError("Action does not seem to be convertable to an int")
         if input_idx >= self._input_dim:
@@ -141,7 +141,7 @@ class MultipleLogisticEnv(object):
 
         input_idx, output_idxs = self._validate_action(action)
         probs = self._compute_output_probs(input_idx, output_idxs)
-        return (self._rng.random(self._output_dim) <= probs).astype(np.float32)
+        return (self._rng.random(len(output_idxs)) <= probs).astype(np.float32)
 
     def expected_reward(self, action):
         return self._output_probs[0, action]

@@ -21,7 +21,7 @@ from absl.testing import absltest, parameterized
 import numpy as np
 from rlba.environments.assortment import (
     AssortmentRecommendationEnv,
-    _choose_optimal_assortment,
+    choose_optimal_assortment,
 )
 from rlba.types import ArraySpec, DiscreteArraySpec
 
@@ -32,7 +32,7 @@ class OptimalAssortmentTest(parameterized.TestCase):
         for seed in range(10):
             rng = np.random.default_rng(seed)
             theta = np.append(np.zeros(n_item - 1), 1)
-            selected_items = _choose_optimal_assortment(theta, n_slot, rng)
+            selected_items = choose_optimal_assortment(theta, n_slot, rng)
             self.assertEqual(selected_items.sum(), n_slot)
             self.assertTrue(selected_items[n_item - 1])
 
@@ -41,7 +41,7 @@ class OptimalAssortmentTest(parameterized.TestCase):
         for seed in range(10):
             rng = np.random.default_rng(seed)
             theta = np.arange(n_item)
-            selected_items = _choose_optimal_assortment(theta, n_slot, rng)
+            selected_items = choose_optimal_assortment(theta, n_slot, rng)
             self.assertEqual(selected_items.sum(), n_slot)
             self.assertTrue((selected_items[-n_slot:] == np.ones(n_slot)).all())
             self.assertTrue(
