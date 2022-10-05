@@ -115,7 +115,7 @@ class ContextualLogisticBandit:
                 specification returned by 'observation_spec()'
                 Integer array [reward, context_index]
         """
-        assert action >= 0 and action < self.num_actions
+        assert action >= 0 and action < self._n_actions
 
         mean_reward = self._rewards[self._context, action]
         reward = self._rng.binomial(1, mean_reward)
