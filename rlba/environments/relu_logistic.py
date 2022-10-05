@@ -365,7 +365,7 @@ class ReLULogisticBandit(object):
         self._model = lambda x: self._model_fn.apply(self._params, None, x)
 
         # expected reward for each context-action pair
-        # self.exp_reward.shape == (n_context, n_action)
+        # self._exp_reward.shape == (n_context, n_action)
         self._exp_reward = self._model(self._feature)
         self._optimal_exp_reward = jnp.max(self._exp_reward, axis=1, keepdims=True)
 
@@ -381,7 +381,7 @@ class ReLULogisticBandit(object):
             action = int(action)
         except TypeError:
             TypeError("Action does not seem to be convertible to an int")
-        if action >= self._action_spec.n_values:
+        if action >= self._action_spec.num_values:
             raise ValueError("action is larger than number of available arms.")
         return action
 
@@ -415,7 +415,7 @@ class ReLULogisticBandit(object):
 
         self._sample_new_context()
 
-        return inst_reward
+        return jnp.array([inst_reward])
 
     def expected_reward(self, context:int, action: NestedArray):
         assert self._exp_reward is not None, "Please reset the environment first"
