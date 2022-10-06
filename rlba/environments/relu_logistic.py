@@ -310,8 +310,8 @@ class ReLULogisticBandit(object):
     """The environment ReLULogisticBandit."""
     def __init__(self, 
                 seed: int, 
-                n_context: int, 
-                n_action: int, 
+                n_contexts: int, 
+                n_actions: int, 
                 layer_dims: Sequence[int], 
                 weight_var: float=1., 
                 bias_var: float=1.,
@@ -319,11 +319,11 @@ class ReLULogisticBandit(object):
         assert len(layer_dims) >= 1
 
         # set the random seed (key) for Jax/Haiku
-        self._hk_keys = hk.PRNGSequence(seed)
+        self._hk_keys = hk.PRNGSequence(jax.random.PRNGKey(seed))
 
         # record the properties
-        self._n_context = n_context
-        self._n_action = n_action
+        self._n_contexts = n_contexts
+        self._n_actions = n_actions
 
         self._layer_dims = layer_dims
         self._weight_var = weight_var
@@ -331,23 +331,40 @@ class ReLULogisticBandit(object):
         self._feature_var = feature_var
         self._input_dim = layer_dims[0]
 
-        self._action_spec = DiscreteArraySpec(n_action, name="action spec")
-        self._observation_spec: ArraySpec = BoundedArraySpec(
-            shape=(1,),
-            dtype=bool,
-            minimum=0.0,
-            maximum=1.0,
-            name="observation spec",
-        )
+        self._action_spec = DiscreteArraySpec(n_actions, name="action spec")
+        self._observation_spec: ArraySpec = {
+            'reward': BoundedArraySpec(
+                shape=(1,),
+                dtype=int,
+                minimum=0,
+                maximum=1,
+                name="reward",
+            ),
+            'context': BoundedArraySpec(
+                shape=(1,),
+                dtype=int,
+                minimum=0,
+                maximum=self._n_contexts-1,
+                name="context",
+            ),
+            'feature': BoundedArraySpec(
+                shape=(self._n_actions, self._input_dim),
+                dtype=float,
+                minimum=0,
+                maximum=jnp.inf,
+                name="feature",
+            ), 
+        }
 
         self._reset()
 
     def _reset(self):
         self._context = None
+        self._prev_context = None
         
         # construct features
         self._feature = jnp.sqrt(self._feature_var)*jax.random.normal(
-            next(self._hk_keys), (self._n_context, self._n_action, 
+            next(self._hk_keys), (self._n_contexts, self._n_actions, 
             self._input_dim))
 
         # initialize the model and prameters
@@ -365,7 +382,7 @@ class ReLULogisticBandit(object):
         self._model = lambda x: self._model_fn.apply(self._params, None, x)
 
         # expected reward for each context-action pair
-        # self._exp_reward.shape == (n_context, n_action)
+        # self._exp_reward.shape == (n_contexts, n_actions)
         self._exp_reward = self._model(self._feature)
         self._optimal_exp_reward = jnp.max(self._exp_reward, axis=1, keepdims=True)
 
@@ -374,7 +391,7 @@ class ReLULogisticBandit(object):
     def _sample_new_context(self):
         self._context = int(jax.random.randint(
                 next(self._hk_keys), shape=[1], minval=0,
-                maxval=self._n_context)[0])
+                maxval=self._n_contexts)[0])
         
     def _validate_action(self, action: NestedArray) -> int:
         try:
@@ -386,14 +403,14 @@ class ReLULogisticBandit(object):
         return action
 
     def _validate_context(self, context: int) -> int:
-        if context >= self._n_context:
+        if context >= self._n_contexts:
             raise ValueError("context is larger than number of available contexts.")
         return context
 
-    def get_context(self):
+    def _get_context(self):
         return self._context
 
-    def get_feature(self, context=None):
+    def _get_feature(self, context=None):
         assert self._feature is not None, "Please reset the environment first"
         if context is None:
             return self._feature
@@ -411,21 +428,25 @@ class ReLULogisticBandit(object):
         """
         action = self._validate_action(action)
         r_mean = self._exp_reward[self._context, action]
-        inst_reward = jax.random.bernoulli(next(self._hk_keys), r_mean)
+        inst_reward = int(jax.random.bernoulli(next(self._hk_keys), r_mean))
 
+        self._prev_context = self._get_context()
         self._sample_new_context()
+        context = self._get_context()
+        feature = self._get_feature(context)
 
-        return jnp.array([inst_reward])
+        return {'reward': inst_reward, 'context': context, 
+                'feature': feature}
 
-    def expected_reward(self, context:int, action: NestedArray):
+    def expected_reward(self, action: NestedArray):
         assert self._exp_reward is not None, "Please reset the environment first"
         action = self._validate_action(action)
-        context = self._validate_context(context)
-        return self._exp_reward[context, action]
+        context = self._prev_context
+        return float(self._exp_reward[context, action])
 
-    def optimal_expected_reward(self, context:int):
-        context = self._validate_context(context)
-        return self._optimal_exp_reward[context]
+    def optimal_expected_reward(self):
+        context = self._prev_context
+        return float(self._optimal_exp_reward[context])
 
     def close(self):
         """Frees any resources used by the environment.
