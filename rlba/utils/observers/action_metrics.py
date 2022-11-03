@@ -16,6 +16,7 @@
 
 from typing import Dict
 
+from rlba.agent import Agent
 from rlba.environment import Environment
 from rlba.types import NestedArray
 from rlba.utils.observers import base
@@ -33,7 +34,11 @@ class ActionStatsObserver:
         self._actions = None
 
     def observe(
-        self, env: Environment, action: NestedArray, observation: NestedArray
+        self,
+        env: Environment,
+        agent: Agent,
+        action: NestedArray,
+        observation: NestedArray,
     ) -> None:
         """Records one environment step."""
         self._actions.append(action)

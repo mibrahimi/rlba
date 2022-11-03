@@ -17,6 +17,7 @@
 from typing import Any, Callable, Iterable, List, Mapping, Optional
 import numpy as np
 
+from rlba.agent import Agent
 from rlba.environment import Environment
 from rlba.types import Array, NestedArray
 from rlba.utils.observers import base
@@ -27,7 +28,7 @@ class RegretObserver:
     """Observer the expected and cumulative regret in a bandit environment.
 
     This observer assumes the expected reward for each step can be computed
-    from the environment and depends only on the selected action.
+    from the environment and agent and depends only on the selected action.
 
     """
 
@@ -67,39 +68,43 @@ class RegretObserver:
     def observe(
         self,
         env: Environment,
+        agent: Agent,
         action: NestedArray,
         observation: NestedArray,
-        reward: float,
     ) -> None:
         """Records one environment step."""
         if self._observer_step == 0:
             if self._expected_reward_fn is None:
-                self._expected_reward_fn = lambda e, a, o: e.expected_reward(a)
+                self._expected_reward_fn = lambda e, a, g, o: e.expected_reward(a)
             if self._opt_expected_reward_fn is None:
-                self._opt_expected_reward_fn = lambda e, o: e.optimal_expected_reward()
+                self._opt_expected_reward_fn = (
+                    lambda e, g, o: e.optimal_expected_reward()
+                )
             if self._cache_expected_reward:
                 self._exp_rewards = {}
-                self._opt_exp_reward = self._opt_expected_reward_fn(env, observation)
+                self._opt_exp_reward = self._opt_expected_reward_fn(
+                    env, agent, observation
+                )
 
         if self._cache_expected_reward:
             action_key = self._action_key_fn(action)
             if action_key in self._exp_rewards:
                 exp_reward = self._exp_rewards[action_key]
             else:
-                exp_reward = self._expected_reward_fn(env, action, observation)
+                exp_reward = self._expected_reward_fn(env, agent, action, observation)
                 self._exp_rewards[action_key] = exp_reward
             opt_exp_reward = self._opt_exp_reward
         else:
-            opt_exp_reward = self._opt_expected_reward_fn(env, observation)
-            exp_reward = self._expected_reward_fn(env, action, observation)
+            opt_exp_reward = self._opt_expected_reward_fn(env, agent, observation)
+            exp_reward = self._expected_reward_fn(env, agent, action, observation)
 
         regret = opt_exp_reward - exp_reward
+
         self._cumulative_regret += regret
         self._observer_step += 1
         self._metrics = {
             "observer_step": self._observer_step,
             "action": action,
-            "reward": reward,
             "exp_reward": exp_reward,
             "regret": regret,
             "cumulative_regret": self._cumulative_regret,

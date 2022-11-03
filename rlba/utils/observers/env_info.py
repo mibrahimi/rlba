@@ -16,13 +16,14 @@
 """
 from typing import Dict
 
+from rlba.agent import Agent
 from rlba.environment import Environment
 from rlba.types import NestedArray
 from rlba.utils.observers import base
 import numpy as np
 
 
-class EnvInfoObserver:
+class EnvInfoObserver(base.EnvLoopObserver):
     """An observer that collects and accumulates scalars from env's info."""
 
     def __init__(self):
@@ -39,7 +40,11 @@ class EnvInfoObserver:
                 self._metrics[k] = self._metrics.get(k, 0) + v
 
     def observe(
-        self, env: Environment, action: NestedArray, observation: NestedArray
+        self,
+        env: Environment,
+        agent: Agent,
+        action: NestedArray,
+        observation: NestedArray,
     ) -> None:
         """Records one environment step."""
         self._accumulate_metrics(env)

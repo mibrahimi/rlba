@@ -19,6 +19,7 @@ from typing_extensions import Protocol
 
 
 from rlba.environment import Environment
+from rlba.agent import Agent
 from rlba.types import NestedArray
 
 
@@ -31,9 +32,9 @@ class EnvLoopObserver(Protocol):
     def observe(
         self,
         env: Environment,
+        agent: Agent,
         action: NestedArray,
         observation: NestedArray,
-        reward: float,
     ) -> None:
         """Records one environment step."""
 

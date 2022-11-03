@@ -97,13 +97,14 @@ class EnvironmentLoop:
             action = self._agent.select_action()
             obs = self._environment.step(action)
 
-            # Have the agent observe the observation and potentially update itself.
-            reward = self._agent.observe(action, obs=obs)
-
+            # This must happen before updating the agent.
             for observer in self._observers:
                 # One environment step was completed. Observe the current state of the
                 # environment, the last action, observation, and reward.
-                observer.observe(self._environment, self._agent, action, obs, reward)
+                observer.observe(self._environment, self._agent, action, obs)
+
+            # Have the agent observe the observation and potentially update itself.
+            reward = self._agent.observe(action, obs=obs)
 
             # Book-keeping.
             n_step += 1
@@ -115,6 +116,7 @@ class EnvironmentLoop:
             # Collect the results and combine with counts.
             steps_per_second = n_step / (time.time() - start_time)
             result = {
+                "reward": reward,
                 "cumulative_return": cumulative_return,
                 "steps_per_second": round(steps_per_second, 3),
             }
