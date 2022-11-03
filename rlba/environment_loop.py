@@ -103,7 +103,7 @@ class EnvironmentLoop:
             for observer in self._observers:
                 # One environment step was completed. Observe the current state of the
                 # environment, the last action, observation, and reward.
-                observer.observe(self._environment, action, obs, reward)
+                observer.observe(self._environment, self._agent, action, obs, reward)
 
             # Book-keeping.
             n_step += 1
