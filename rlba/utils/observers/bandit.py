@@ -74,24 +74,24 @@ class RegretObserver:
         """Records one environment step."""
         if self._observer_step == 0:
             if self._expected_reward_fn is None:
-                self._expected_reward_fn = lambda e, a: e.expected_reward(a)
+                self._expected_reward_fn = lambda e, a, o: e.expected_reward(a)
             if self._opt_expected_reward_fn is None:
-                self._opt_expected_reward_fn = lambda e: e.optimal_expected_reward()
+                self._opt_expected_reward_fn = lambda e, o: e.optimal_expected_reward()
             if self._cache_expected_reward:
                 self._exp_rewards = {}
-                self._opt_exp_reward = self._opt_expected_reward_fn(env)
+                self._opt_exp_reward = self._opt_expected_reward_fn(env, observation)
 
         if self._cache_expected_reward:
             action_key = self._action_key_fn(action)
             if action_key in self._exp_rewards:
                 exp_reward = self._exp_rewards[action_key]
             else:
-                exp_reward = self._expected_reward_fn(env, action)
+                exp_reward = self._expected_reward_fn(env, action, observation)
                 self._exp_rewards[action_key] = exp_reward
             opt_exp_reward = self._opt_exp_reward
         else:
-            opt_exp_reward = self._opt_expected_reward_fn(env)
-            exp_reward = self._expected_reward_fn(env, action)
+            opt_exp_reward = self._opt_expected_reward_fn(env, observation)
+            exp_reward = self._expected_reward_fn(env, action, observation)
 
         regret = opt_exp_reward - exp_reward
         self._cumulative_regret += regret
