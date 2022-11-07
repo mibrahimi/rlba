@@ -25,28 +25,28 @@ class QueueingEnv:
 
         self._observation_spec: ArraySpec = {
             'reward': BoundedArraySpec(
-                shape=(1,),
+                shape=(0,),
                 dtype=float,
                 minimum=-np.inf,
                 maximum=np.inf,
                 name="reward",
             ),
             'queue_length': BoundedArraySpec(
-                shape=(1,),
+                shape=(0,),
                 dtype=int,
                 minimum=0,
                 maximum=self._buffer_size,
                 name="queue_length",
             ),
             'abandonment': BoundedArraySpec(
-                shape=(1,),
+                shape=(0,),
                 dtype=int,
                 minimum=0,
                 maximum=1,
                 name="abandonment",
             ),
             'termination': BoundedArraySpec(
-                shape=(1,),
+                shape=(0,),
                 dtype=int,
                 minimum=0,
                 maximum=1,
@@ -79,10 +79,10 @@ class QueueingEnv:
         termination = int(self._queue_length == 0)
         reward = self.get_reward(action, self._queue_length, abandonment)
         observation = {
-            'reward': np.array([reward]),
-            'queue_length': np.array([self._queue_length]),
-            'abandonment': np.array([abandonment]),
-            'termination': np.array([termination]),
+            'reward': reward,
+            'queue_length': self._queue_length,
+            'abandonment': abandonment,
+            'termination': termination,
         }
         if termination == 1:
             self._queue_length = self._buffer_size
